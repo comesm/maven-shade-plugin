@@ -183,8 +183,7 @@ public class SimpleRelocator
             path = path.substring( 1 );
         }
 
-        return isIncluded( path ) && !isExcluded( path ) && path.startsWith( pathPattern ) 
-                && !path.startsWith( shadedPathPattern );
+        return isIncluded( path ) && !isExcluded( path ) && path.startsWith( pathPattern );
     }
 
     public boolean canRelocateClass( String clazz )
