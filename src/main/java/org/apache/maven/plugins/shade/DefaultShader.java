@@ -29,6 +29,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -234,9 +235,9 @@ public class DefaultShader
                 }
             }
 
+            duplicates.put( name, jar );
             if ( name.endsWith( ".class" ) )
             {
-                duplicates.put( name, jar );
                 addRemappedClass( remapper, jos, jar, name, in );
             }
             else if ( shadeRequest.isShadeSourcesContent() && name.endsWith( ".java" ) )
@@ -256,6 +257,7 @@ public class DefaultShader
                     // Avoid duplicates that aren't accounted for by the resource transformers
                     if ( resources.contains( mappedName ) )
                     {
+                        getLogger().debug( "We have a duplicate " + name + " in " + jar );
                         return;
                     }
 
@@ -339,28 +341,55 @@ public class DefaultShader
                 jarzS.add( jjar.getName() );
             }
 
-            List<String> classes = new LinkedList<String>();
+            Collections.sort( jarzS ); // deterministic messages to be able to compare outputs (useful on CI)
 
-            for ( String clazz : overlapping.get( jarz ) )
+            List<String> classes = new LinkedList<String>();
+            List<String> resources = new LinkedList<String>();
+
+            for ( String name : overlapping.get( jarz ) )
             {
-                classes.add( clazz.replace( ".class", "" ).replace( "/", "." ) );
+                if ( name.endsWith( ".class" ) )
+                {
+                    classes.add( name.replace( ".class", "" ).replace( "/", "." ) );
+                }
+                else
+                {
+                    resources.add( name );
+                }
             }
 
             //CHECKSTYLE_OFF: LineLength
+            final Collection<String> overlaps = new ArrayList<>();
+            if ( !classes.isEmpty() )
+            {
+                overlaps.add( "classes" );
+            }
+            if ( !resources.isEmpty() )
+            {
+                overlaps.add( "resources" );
+            }
+
+            final List<String> all = new ArrayList<>( classes.size() + resources.size() );
+            all.addAll( classes );
+            all.addAll( resources );
+
             getLogger().warn(
-                Joiner.on( ", " ).join( jarzS ) + " define " + classes.size() + " overlapping classes: " );
+                Joiner.on( ", " ).join( jarzS ) + " define " + all.size()
+                + " overlapping " + Joiner.on( " and " ).join( overlaps ) + ": " );
             //CHECKSTYLE_ON: LineLength
+
+            Collections.sort( all );
 
             int max = 10;
 
-            for ( int i = 0; i < Math.min( max, classes.size() ); i++ )
+            for ( int i = 0; i < Math.min( max, all.size() ); i++ )
             {
-                getLogger().warn( "  - " + classes.get( i ) );
+                getLogger().warn( "  - " + all.get( i ) );
             }
 
-            if ( classes.size() > max )
+            if ( all.size() > max )
             {
-                getLogger().warn( "  - " + ( classes.size() - max ) + " more..." );
+                getLogger().warn( "  - " + ( all.size() - max ) + " more..." );
             }
 
         }
