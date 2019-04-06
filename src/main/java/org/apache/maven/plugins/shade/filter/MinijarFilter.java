@@ -125,6 +125,8 @@ public class MinijarFilter
 
     private void removeServices( final MavenProject project, final Clazzpath cp )
     {
+        final Set<Clazz> neededClasses = cp.getClazzes();
+        neededClasses.removeAll( removable );
         try
         {
             for ( final String fileName : project.getRuntimeClasspathElements() )
@@ -134,7 +136,14 @@ public class MinijarFilter
                     for ( final Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); )
                     {
                         final JarEntry jarEntry = entries.nextElement();
-                        if ( !jarEntry.getName().startsWith( "META-INF/services/" ) )
+                        if ( jarEntry.isDirectory() || !jarEntry.getName().startsWith( "META-INF/services/" ) )
+                        {
+                            continue;
+                        }
+
+                        final String serviceClassName = jarEntry.getName().substring( "META-INF/services/".length() );
+                        final boolean isNeededClass = neededClasses.contains( cp.getClazz( serviceClassName ) );
+                        if ( !isNeededClass )
                         {
                             continue;
                         }

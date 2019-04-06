@@ -23,6 +23,6 @@ under the License.
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.apache.maven.its.shade.mj</groupId>
-  <artifactId>service</artifactId>
+  <artifactId>unused-service</artifactId>
   <version>1.0</version>
 </project>
