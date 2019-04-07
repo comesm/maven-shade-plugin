@@ -24,14 +24,18 @@ String[] wanted =
     "Main.class",
     "SomeServiceInterface.class",
     "SomeServiceClass.class",
-    "SomeReferencedClass.class"
+    "SomeReferencedClass.class",
+    "DependencyServiceInterface.class",
+    "DependencyServiceClass.class",
+    "DependencyReferencedClass.class"
 };
 
 String[] unwanted =
 {
     "UnusedServiceInterface.class",
     "UnusedServiceClass.class",
-    "SomeUnreferencedClass.class"
+    "SomeUnreferencedClass.class",
+    "DependencyUnreferencedClass.class"
 };
 
 JarFile jarFile = new JarFile( new File( basedir, "test/target/test-1.0.jar" ) );

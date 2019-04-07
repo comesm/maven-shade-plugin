@@ -125,71 +125,79 @@ public class MinijarFilter
 
     private void removeServices( final MavenProject project, final Clazzpath cp )
     {
-        final Set<Clazz> neededClasses = cp.getClazzes();
-        neededClasses.removeAll( removable );
-        try
+        boolean repeatScan;
+        do
         {
-            for ( final String fileName : project.getRuntimeClasspathElements() )
+            repeatScan = false;
+            final Set<Clazz> neededClasses = cp.getClazzes();
+            neededClasses.removeAll( removable );
+            try
             {
-                try ( final JarFile jar = new JarFile( fileName ) )
+                for ( final String fileName : project.getRuntimeClasspathElements() )
                 {
-                    for ( final Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); )
+                    try ( final JarFile jar = new JarFile( fileName ) )
                     {
-                        final JarEntry jarEntry = entries.nextElement();
-                        if ( jarEntry.isDirectory() || !jarEntry.getName().startsWith( "META-INF/services/" ) )
+                        for ( final Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); )
                         {
-                            continue;
-                        }
-
-                        final String serviceClassName = jarEntry.getName().substring( "META-INF/services/".length() );
-                        final boolean isNeededClass = neededClasses.contains( cp.getClazz( serviceClassName ) );
-                        if ( !isNeededClass )
-                        {
-                            continue;
-                        }
-
-                        try ( final BufferedReader bufferedReader =
-                           new BufferedReader( new InputStreamReader( jar.getInputStream( jarEntry ), UTF_8 ) ) )
-                        {
-                            for ( String line = bufferedReader.readLine(); line != null;
-                                line = bufferedReader.readLine() )
+                            final JarEntry jarEntry = entries.nextElement();
+                            if ( jarEntry.isDirectory() || !jarEntry.getName().startsWith( "META-INF/services/" ) )
                             {
-                                final String className = line.split( "#", 2 )[0].trim();
-                                if ( className.isEmpty() )
-                                {
-                                    continue;
-                                }
+                                continue;
+                            }
 
-                                log.info( className + " was not removed because it is a service" );
-                                removeClass( cp, className );
+                            final String serviceClassName =
+                              jarEntry.getName().substring( "META-INF/services/".length() );
+                            final boolean isNeededClass = neededClasses.contains( cp.getClazz( serviceClassName ) );
+                            if ( !isNeededClass )
+                            {
+                                continue;
+                            }
+
+                            try ( final BufferedReader bufferedReader =
+                            new BufferedReader( new InputStreamReader( jar.getInputStream( jarEntry ), UTF_8 ) ) )
+                            {
+                                for ( String line = bufferedReader.readLine(); line != null;
+                                    line = bufferedReader.readLine() )
+                                {
+                                    final String className = line.split( "#", 2 )[0].trim();
+                                    if ( className.isEmpty() )
+                                    {
+                                        continue;
+                                    }
+
+                                    final Clazz clazz = cp.getClazz( className );
+                                    if ( clazz == null || !removable.contains( clazz ) )
+                                    {
+                                        continue;
+                                    }
+
+                                    log.info( className + " was not removed because it is a service" );
+                                    removeClass( cp, clazz );
+                                    repeatScan = true; // check whether the found classes use services in turn
+                                }
+                            }
+                            catch ( final IOException e )
+                            {
+                                log.warn( e.getMessage() );
                             }
                         }
-                        catch ( final IOException e )
-                        {
-                            log.warn( e.getMessage() );
-                        }
+                    }
+                    catch ( final IOException e )
+                    {
+                        log.warn( e.getMessage() );
                     }
                 }
-                catch ( final IOException e )
-                {
-                    log.warn( e.getMessage() );
-                }
+            }
+            catch ( final DependencyResolutionRequiredException e )
+            {
+                log.warn( e.getMessage() );
             }
         }
-        catch ( final DependencyResolutionRequiredException e )
-        {
-            log.warn( e.getMessage() );
-        }
+        while ( repeatScan );
     }
 
-    private void removeClass( final Clazzpath clazzPath, final String className )
+    private void removeClass( final Clazzpath clazzPath, final Clazz clazz )
     {
-        final Clazz clazz = clazzPath.getClazz( className );
-        if ( clazz == null )
-        {
-            return;
-        }
-
         removable.remove( clazz );
         removable.removeAll( clazz.getTransitiveDependencies() );
     }

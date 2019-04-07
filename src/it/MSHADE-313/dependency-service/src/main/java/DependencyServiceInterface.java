@@ -17,11 +17,6 @@
  * under the License.
  */
 
-import java.util.ServiceLoader;
-
-public class SomeReferencedClass
+public interface DependencyServiceInterface
 {
-    {
-        ServiceLoader.load( DependencyServiceInterface.class );
-    }
 }
