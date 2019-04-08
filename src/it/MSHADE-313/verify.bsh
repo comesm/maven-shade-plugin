@@ -22,9 +22,11 @@ import java.util.jar.*;
 String[] wanted =
 {
     "Main.class",
+    "META-INF/services/SomeServiceInterface",
     "SomeServiceInterface.class",
     "SomeServiceClass.class",
     "SomeReferencedClass.class",
+    "META-INF/services/DependencyServiceInterface",
     "DependencyServiceInterface.class",
     "DependencyServiceClass.class",
     "DependencyReferencedClass.class"
