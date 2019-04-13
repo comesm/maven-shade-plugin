@@ -23,7 +23,6 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.IOUtil;
 import org.vafer.jdependency.Clazz;
 import org.vafer.jdependency.Clazzpath;
 import org.vafer.jdependency.ClazzpathUnit;
@@ -171,7 +170,7 @@ public class MinijarFilter
                                         continue;
                                     }
 
-                                    log.info( className + " was not removed because it is a service" );
+                                    log.debug( className + " was not removed because it is a service" );
                                     removeClass( cp, clazz );
                                     repeatScan = true; // check whether the found classes use services in turn
                                 }
@@ -235,12 +234,10 @@ public class MinijarFilter
         removePackages( artifactUnit.getTransitiveDependencies(), packageNames );
     }
 
-    @SuppressWarnings( "rawtypes" )
-    private void removePackages( Set clazzes, Set<String> packageNames )
+    private void removePackages( Set<Clazz> clazzes, Set<String> packageNames )
     {
-        for ( Object clazze : clazzes )
+        for ( Clazz clazz : clazzes )
         {
-            Clazz clazz = (Clazz) clazze;
             String name = clazz.getName();
             while ( name.contains( "." ) )
             {
@@ -278,7 +275,7 @@ public class MinijarFilter
                             if ( clazzes.contains( clazz ) //
                                 && simpleFilter.isSpecificallyIncluded( clazz.getName().replace( '.', '/' ) ) )
                             {
-                                log.info( clazz.getName() + " not removed because it was specifically included" );
+                                log.debug( clazz.getName() + " not removed because it was specifically included" );
                                 j.remove();
                             }
                         }
@@ -288,13 +285,13 @@ public class MinijarFilter
         }
     }
 
-    /** {@inheritDoc} */
+    @Override
     public boolean canFilter( File jar )
     {
         return true;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public boolean isFiltered( String classFile )
     {
         String className = classFile.replace( '/', '.' ).replaceFirst( "\\.class$", "" );
@@ -311,7 +308,7 @@ public class MinijarFilter
         return false;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public void finished()
     {
         int classesTotal = classesRemoved + classesKept;
